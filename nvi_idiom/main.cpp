@@ -6,7 +6,7 @@ public:
     void foo() {
         before_foo();
         
-        __foo_method();
+        foo_impl();
 
         after_foo();
     }
@@ -19,23 +19,25 @@ public:
         std::cout << "Base::after_foo()" << std::endl;
     }
 
+    virtual ~Base() {}
+
 private:
-    virtual void __foo_method() = 0;
+    virtual void foo_impl() = 0;
 };
 
 
 struct Derive1 : Base {
 private:
-    virtual void __foo_method() override {
-        std::cout << "Derive1::__foo_method()" << std::endl;
+    virtual void foo_impl() override {
+        std::cout << "Derive1::foo_impl()" << std::endl;
     }
 };
 
 
 struct Derive2 : Base {
 private:
-    virtual void __foo_method() override {
-        std::cout << "Derive2::__foo_method()" << std::endl;
+    virtual void foo_impl() override {
+        std::cout << "Derive2::foo_impl()" << std::endl;
     }
 };
 
