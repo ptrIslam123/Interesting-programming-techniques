@@ -25,7 +25,7 @@ public:
     SharedState();
     ~SharedState() = default;
     bool isReady() const;
-    void set(ValueType value);
+    void set(ValueType &&value);
     ValueType getIfReadyOrBlocked();
 
 private:
@@ -61,7 +61,7 @@ bool SharedState<T>::isReady() const {
 }
 
 template<typename T>
-void SharedState<T>::set(ValueType value) {
+void SharedState<T>::set(ValueType &&value) {
     std::unique_lock<std::mutex> uniqueLock(lock_);
     if (isReady_) {
         throw BadSharedState("Attempt set value more than one");

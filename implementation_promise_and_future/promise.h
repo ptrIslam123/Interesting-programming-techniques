@@ -2,18 +2,16 @@
 
 #include <memory>
 #include <functional>
-#include <thread>
 
 #include "shared_state.h"
 
 namespace async {
 
-template<typename T, typename ... Args>
+template<typename T>
 class Promise {
 public:
     typedef T ValueType;
     typedef std::shared_ptr<SharedState<ValueType> > SharedStatePtr;
-    typedef std::function<T(Args ...)> AsyncTask;
 
     class Future {
     public:
@@ -32,61 +30,79 @@ public:
         SharedStatePtr sharedState_;
     };
 
-
-    explicit Promise(AsyncTask &&syncTask);
+    Promise();
+    Promise(Promise &&other) noexcept;
+    Promise &operator=(Promise &&other) noexcept;
+    Promise(const Promise &other) = delete;
+    Promise &operator=(const Promise &other) = delete;
     ~Promise() = default;
 
     Future getFuture() const;
-    void set(ValueType value);
+    void set(const ValueType &value);
+    void set(ValueType &&value);
 private:
     SharedStatePtr sharedState_;
 };
 
-template<typename T, typename... Args>
-Promise<T, Args ...>::Future::Future(const Promise::SharedStatePtr &sharedState):
-sharedState_() {
+template<typename T>
+Promise<T>::Future::Future(const SharedStatePtr &sharedState):
+sharedState_(sharedState) {
 }
 
-template<typename T, typename... Args>
-Promise<T, Args ...>::Future::Future(Promise::Future &&other) noexcept:
-sharedState_(std::move(other.sharedState_)) {
+template<typename T>
+Promise<T>::Future::Future(Promise::Future &&other) noexcept:
+sharedState_(other.sharedState_) {
+    other.sharedState_ = nullptr;
 }
 
-template<typename T, typename... Args>
-typename Promise<T, Args ...>::Future &Promise<T, Args ...>::Future::operator=(Promise::Future &&other) noexcept {
-    sharedState_ = std::move(other.sharedState_);
+template<typename T>
+typename Promise<T>::Future &Promise<T>::Future::operator=(Promise::Future &&other) noexcept {
+    sharedState_ = other.sharedState_;
+    other.sharedState_ = nullptr;
     return *this;
 }
 
-template<typename T, typename... Args>
-bool Promise<T, Args ...>::Future::isReady() const {
+template<typename T>
+bool Promise<T>::Future::isReady() const {
     return sharedState_->isReady();
 }
 
-template<typename T, typename... Args>
-typename Promise<T, Args ...>::ValueType Promise<T, Args ...>::Future::get() const {
+template<typename T>
+typename Promise<T>::ValueType Promise<T>::Future::get() const {
     return sharedState_->getIfReadyOrBlocked();
 }
 
-template<typename T, typename... Args>
-typename Promise<T, Args ...>::Future Promise<T, Args ...>::getFuture() const {
-    Future future = Future(sharedState_);
-    return std::move(future);
+    template<typename T>
+typename Promise<T>::Future Promise<T>::getFuture() const {
+    return Future(sharedState_);
 }
 
-template<typename T, typename... Args>
-void Promise<T, Args ...>::set(ValueType value) {
+template<typename T>
+void Promise<T>::set(const ValueType &value) {
+    sharedState_->set(ValueType(value));
+}
+
+template<typename T>
+void Promise<T>::set(ValueType &&value) {
     sharedState_->set(std::move(value));
 }
 
-template<typename T, typename... Args>
-Promise<T, Args ...>::Promise(AsyncTask &&asyncTask):
-sharedState_(std::make_shared<SharedState<T>>()) {
-    std::thread thread([asyncTask, this](){
-        const auto result = asyncTask();
-        sharedState_->set(result);
-    });
-    thread.detach();
+template<typename T>
+Promise<T>::Promise():
+sharedState_(std::make_shared<SharedState<ValueType> >()) {
+}
+
+template<typename T>
+Promise<T>::Promise(Promise &&other) noexcept:
+sharedState_(other.sharedState_) {
+    other.sharedState_ = nullptr;
+}
+
+template<typename T>
+Promise<T> &Promise<T>::operator=(Promise &&other) noexcept {
+    sharedState_ = other.sharedState_;
+    other.sharedState_ = nullptr;
+    return *this;
 }
 
 } // namespace async
