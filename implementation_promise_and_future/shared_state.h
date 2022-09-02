@@ -6,6 +6,7 @@
 #include <exception>
 
 #include "lazy.h"
+#include "generic_class_of_exception.h"
 
 namespace async {
 
@@ -13,14 +14,7 @@ template<typename T>
 class SharedState {
 public:
     typedef T ValueType;
-
-    class BadSharedState : public std::exception {
-    public:
-        explicit BadSharedState(std::string &&msg);
-        virtual const char *what() const noexcept override;
-    private:
-        std::string msg_;
-    };
+    typedef util::GenericClassOfException BadSharedState;
 
     SharedState();
     ~SharedState() = default;
@@ -38,16 +32,6 @@ private:
 };
 
 template<typename T>
-SharedState<T>::BadSharedState::BadSharedState(std::string &&msg):
-msg_(std::move(msg)) {
-}
-
-template<typename T>
-const char *SharedState<T>::BadSharedState::what() const noexcept {
-    return msg_.c_str();
-}
-
-    template<typename T>
 SharedState<T>::SharedState():
 data_(),
 lock_(),

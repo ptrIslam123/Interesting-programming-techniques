@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "shared_state.h"
+#include "generic_class_of_exception.h"
 
 namespace async {
 
@@ -12,9 +13,12 @@ class Promise {
 public:
     typedef T ValueType;
     typedef std::shared_ptr<SharedState<ValueType> > SharedStatePtr;
+    typedef util::GenericClassOfException BadPromise;
 
     class Future {
     public:
+        typedef util::GenericClassOfException BadFuture;
+
         Future(Future &&other) noexcept;
         Future &operator=(Future &&other) noexcept;
         Future(const Future &other) = delete;
@@ -69,7 +73,11 @@ bool Promise<T>::Future::isReady() const {
 
 template<typename T>
 typename Promise<T>::ValueType Promise<T>::Future::get() const {
-    return sharedState_->getIfReadyOrBlocked();
+    try {
+        return sharedState_->getIfReadyOrBlocked();
+    } catch (const typename SharedState<T>::BadSharedState &e) {
+        throw BadFuture(e.what());
+    }
 }
 
     template<typename T>
@@ -79,7 +87,11 @@ typename Promise<T>::Future Promise<T>::getFuture() const {
 
 template<typename T>
 void Promise<T>::set(const ValueType &value) {
-    sharedState_->set(ValueType(value));
+    try {
+        sharedState_->set(ValueType(value));
+    } catch (const typename SharedState<T>::BadSharedState &e) {
+        throw BadPromise(e.what());
+    }
 }
 
 template<typename T>

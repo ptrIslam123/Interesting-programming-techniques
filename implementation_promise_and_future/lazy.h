@@ -4,20 +4,15 @@
 #include <optional>
 #include <string>
 
+#include "generic_class_of_exception.h"
+
 namespace util {
 
 template<typename T>
 class Lazy {
 public:
     typedef T ValueType;
-
-    class BadLazy : public std::exception {
-    public:
-        explicit BadLazy(std::string &&msg);
-        virtual const char *what() const noexcept override;
-    private:
-        std::string msg_;
-    };
+    typedef GenericClassOfException BadLazy;
 
     Lazy();
     ~Lazy();
@@ -39,16 +34,6 @@ private:
     bool isInit_;
     std::optional<ValueType> value_;
 };
-
-template<typename T>
-const char *Lazy<T>::BadLazy::what() const noexcept {
-    return msg_.c_str();
-}
-
-template<typename T>
-Lazy<T>::BadLazy::BadLazy(std::string &&msg):
-msg_(std::move(msg)) {
-}
 
 template<typename T>
 Lazy<T>::Lazy():
