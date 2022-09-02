@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "package_task.h"
+#include "future.h"
 
 void SleepSecond(int duration) {
     std::this_thread::sleep_for(std::chrono::milliseconds(duration * 100));
@@ -41,7 +42,6 @@ void FirstExample() {
 
 void SecondExample() {
     auto task = [](){
-//        SleepSecond(20);
         const auto someValue = 1000;
         PrintMessage("Promise is ready!");
         return someValue;
@@ -80,6 +80,25 @@ void ThirdExample() {
     assert(result == value);
 }
 
+void LastExample(const ExecutionType executionType) {
+    const auto value = 1000;
+    auto task = [](){
+        SleepSecond(20);
+        PrintMessage("Promise is ready!");
+        return value;
+    };
+    auto future = Async<int()>(task, executionType);
+
+    SleepSecond(10);
+    PrintMessage("Call future get method");
+    const auto resul = future.get();
+    std::stringstream oss;
+    oss << "Result from future with value: " << resul;
+    PrintMessage(oss.str());
+
+    assert(resul == value);
+}
+
 void SomeTestOnMultithreading() {
     auto globalCounter = 0;
     const auto capacity = 10000;
@@ -104,6 +123,6 @@ void SomeTestOnMultithreading() {
 }
 
 int main() {
-    SomeTestOnMultithreading();
+    LastExample(ExecutionType::Async);
     return 0;
 }
