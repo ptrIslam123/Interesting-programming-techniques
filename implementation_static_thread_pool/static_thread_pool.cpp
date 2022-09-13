@@ -2,12 +2,11 @@
 
 namespace thread {
 
-
 StaticThreadPool::StaticThreadPool(const unsigned short workersCount):
-        tasksQueue_(),
-        checkerOnQueueEmpty_(),
-        queueLock_(),
-        workers_() {
+tasksQueue_(),
+checkerOnQueueEmpty_(),
+queueLock_(),
+workers_() {
     workers_.reserve(workersCount);
     for (auto i = 0; i < workersCount; ++i) {
         workers_.emplace_back([this](){
