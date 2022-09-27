@@ -2,6 +2,8 @@
 
 #include "package_task.h"
 
+#include <cassert>
+
 namespace async {
 
 enum class ExecutionType {
@@ -20,8 +22,11 @@ auto Async(F func, const ExecutionType executionType = ExecutionType::Sync) {
             promise.set(func());
             return promise.getFuture();
         }
-        default: {}
+        default: {
+            assert(false);
+        }
     }
+    return Promise<std::result_of_t<F&()>>().getFuture();
 }
 
 } // namespace async

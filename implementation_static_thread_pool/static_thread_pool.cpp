@@ -1,19 +1,19 @@
 #include "static_thread_pool.h"
 
+#include <algorithm>
+
 namespace thread {
 
-
 StaticThreadPool::StaticThreadPool(const unsigned short workersCount):
-        tasksQueue_(),
-        checkerOnQueueEmpty_(),
-        queueLock_(),
-        workers_() {
-    workers_.reserve(workersCount);
-    for (auto i = 0; i < workersCount; ++i) {
-        workers_.emplace_back([this](){
+tasksQueue_(),
+checkerOnQueueEmpty_(),
+queueLock_(),
+workers_(workersCount) {
+    std::generate(workers_.begin(), workers_.end(), [this](){
+        return std::thread([this](){
             work();
         });
-    }
+    });
 }
 
 void StaticThreadPool::submit(StaticThreadPool::Task task) {
@@ -29,15 +29,15 @@ void StaticThreadPool::work() {
             checkerOnQueueEmpty_.wait(lock);
         }
 
-        auto task = tasksQueue_.front();
+        auto task = tasksQueue_.back();
         tasksQueue_.pop();
         lock.unlock();
 
         if (!task) {
             break;
-        } else {
-            task();
         }
+
+        task();
     }
 }
 
@@ -46,12 +46,11 @@ void StaticThreadPool::join() {
         submit({}); //! Пустой функтор сигнализирует о прекращении работы worker`а
     }
 
-    for (auto i = 0; i < workers_.size(); ++i) {
-        std::thread &worker = workers_[i];
+    std::for_each_n(workers_.begin(), workers_.size(), [](auto &worker){
         if (worker.joinable()) {
             worker.join();
         }
-    }
+    });
 }
 
 } // namespace thread

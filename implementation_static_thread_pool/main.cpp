@@ -4,7 +4,7 @@
 #include "static_thread_pool.h"
 
 
-auto globalVariable = 1;
+auto globalVariable = 0;
 
 int main() {
     using namespace thread;

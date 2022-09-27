@@ -2,9 +2,9 @@
 
 #include <memory>
 #include <functional>
+#include <exception>
 
 #include "shared_state.h"
-#include "generic_class_of_exception.h"
 
 namespace async {
 
@@ -13,11 +13,11 @@ class Promise {
 public:
     typedef T ValueType;
     typedef std::shared_ptr<SharedState<ValueType> > SharedStatePtr;
-    typedef util::GenericClassOfException BadPromise;
+    typedef std::runtime_error BadPromise;
 
     class Future {
     public:
-        typedef util::GenericClassOfException BadFuture;
+        typedef std::runtime_error BadFuture;
 
         Future(Future &&other) noexcept;
         Future &operator=(Future &&other) noexcept;
@@ -74,13 +74,13 @@ bool Promise<T>::Future::isReady() const {
 template<typename T>
 typename Promise<T>::ValueType Promise<T>::Future::get() const {
     try {
-        return sharedState_->getIfReadyOrBlocked();
+        return sharedState_->getIfReadyOrBlock();
     } catch (const typename SharedState<T>::BadSharedState &e) {
         throw BadFuture(e.what());
     }
 }
 
-    template<typename T>
+template<typename T>
 typename Promise<T>::Future Promise<T>::getFuture() const {
     return Future(sharedState_);
 }

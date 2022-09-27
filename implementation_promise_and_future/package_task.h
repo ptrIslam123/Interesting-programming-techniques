@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <thread>
+#include <exception>
 
 #include "lazy.h"
 #include "promise.h"
@@ -15,6 +16,7 @@ public:
     using ReturnType = std::result_of_t<F&()>;
     using PromiseType = Promise<ReturnType>;
     using FutureType = typename PromiseType::Future;
+    using BadPackageTask = std::runtime_error;
 
     PackageTask();
     explicit PackageTask(FunctorType functor);
@@ -53,12 +55,10 @@ PackageTask<F>::PackageTask(FunctorType functor, PromiseType &&promise) {
 
 template<typename F>
 typename PackageTask<F>::FutureType PackageTask<F>::getFuture() {
-    typedef util::Lazy<FutureType> LazyFutureType;
-
-    try {
-        return std::move(LazyFutureType(std::move(future_)).getValue());
-    } catch (const typename LazyFutureType::BadLazy &e) {
-        throw std::runtime_error("!!!");
+    if (future_.hasValue()) {
+        return std::move(util::Lazy<FutureType>(std::move(future_)).getValue());
+    } else {
+        throw BadPackageTask("Can`t get future from empty package task");
     }
 }
 

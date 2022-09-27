@@ -20,7 +20,6 @@ void PrintMessage(const std::string &msg) {
 
 using namespace async;
 
-
 void FirstExample() {
     auto promise = Promise<int>();
     auto future = promise.getFuture();
@@ -123,6 +122,6 @@ void SomeTestOnMultithreading() {
 }
 
 int main() {
-    LastExample(ExecutionType::Async);
+    LastExample(async::ExecutionType::Async);
     return 0;
 }
